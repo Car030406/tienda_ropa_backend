@@ -3,14 +3,14 @@ const db = require('./db');
 const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
+const path = require('path');
 
 // Middlewares
 app.use(cors());
-
+app.use(express.static(path.join(__dirname, "frontend")));
 app.use(express.json());
-// Ruta inicial
 app.get('/', (req, res) => {
-    res.send('API Tienda de Ropa funcionando');
+    res.sendFile(path.join(__dirname, "frontend", "index.html"));
 });
 // ----- RUTAS PRODUCTOS -----
 

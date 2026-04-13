@@ -1,23 +1,116 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Tienda de Ropa</title>
+  <meta charset="UTF-8">
+  <title>CARO'S STORE</title>
+
+  <style>
+    body {
+      font-family: Georgia, 'Times New Roman', Times, serif, sans-serif;
+      background: #ffc2d9;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    h2 {
+      margin-top: 30px;
+    }
+
+    input {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      background: rgb(230, 96, 141);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: rgb(189, 26, 134);
+    }
+
+    /* CONTENEDOR FORM */
+    .form-container {
+      background: rgb(0, 0, 0);
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgb(189, 26, 134);
+      max-width: 400px;
+      margin: auto;
+      text-align: center;
+      color:#ccc;
+    }
+
+    /* GRID DE PRODUCTOS */
+    #lista {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    /* TARJETAS */
+    .card {
+      background: rgb(0, 0, 0);
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 4px 10px rgba(189,23,134);
+      transition: transform 0.2s;
+      color:#ccc;
+    }
+
+    .card:hover {
+      transform: scale(1.05);
+    }
+
+    .card h3 {
+      margin: 0;
+    }
+
+    .card p {
+      margin: 5px 0;
+    }
+
+    .card button {
+      background: rgb(230, 96, 141);
+      margin-top: 10px;
+      width: 100%;
+    }
+  </style>
 </head>
+
 <body>
 
-  <h1>Tienda de Ropa</h1>
+  <h1> CARO'S STORE</h1>
 
-  <h2>Agregar producto</h2>
-  <input id="nombre" placeholder="Nombre">
-  <input id="precio" placeholder="Precio">
-  <input id="talla" placeholder="Talla">
-  <button onclick="agregarProducto()">Agregar</button>
+  <div class="form-container">
+    <h2>Agregar producto</h2>
+
+    <input id="nombre" placeholder="Nombre"><br>
+    <input id="precio" placeholder="Precio" type="number"><br>
+    <input id="talla" placeholder="Talla"><br>
+
+    <button onclick="agregarProducto()">Agregar</button>
+  </div>
 
   <h2>Productos</h2>
   <div id="lista"></div>
 
   <script>
-    const API_URL = "http://localhost:3000/api/productos";
+    const API_URL = "https://tienda-ropa-backend-1.onrender.com/api/productos";
+    
+    window.onload = cargarProductos;
 
     function cargarProductos() {
       fetch(API_URL)
@@ -28,41 +121,65 @@
 
           data.forEach(p => {
             lista.innerHTML += `
-              <div style="border:1px solid black; margin:10px; padding:10px;">
+              <div class="card">
                 <h3>${p.nombre}</h3>
-                <p>Precio: $${p.precio}</p>
+                <p><strong>$${p.precio}</strong></p>
                 <p>Talla: ${p.talla}</p>
+                <button onclick="editarProducto(${p.id}, '${p.nombre}', ${p.precio}, '${p.talla}')">Editar</button>
+                <button onclick="eliminarProducto(${p.id})">Eliminar</button>
+                
               </div>
             `;
           });
         });
     }
+    function editarProducto(id, nombre, precio, talla) {
+    document.getElementById("nombre").value = nombre;
+    document.getElementById("precio").value = precio;
+    document.getElementById("talla").value = talla;
+
+    editandoId = id;
+  }
 
     function agregarProducto() {
-  const nombre = document.getElementById("nombre").value;
-  const precio = document.getElementById("precio").value;
-  const talla = document.getElementById("talla").value;
+      const nombre = document.getElementById("nombre").value;
+      const precio = document.getElementById("precio").value;
+      const talla = document.getElementById("talla").value;
+      
 
-  fetch("http://localhost:3000/api/productos", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      nombre: nombre,
-      precio: precio,
-      talla: talla
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    console.log("RESPUESTA:", data);
-    cargarProductos(); // recargar lista
-  })
-  .catch(error => {
-    console.error("ERROR:", error);
-  });
-}
+      if (!nombre || !precio || !talla) {
+        alert("Completa todos los campos");
+        return;
+      }
+
+      fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ nombre, precio, talla })
+      })
+      .then(res => res.json())
+      .then(() => {
+        limpiarInputs();
+        cargarProductos();
+      })
+      .catch(error => console.error("ERROR:", error));
+    }
+
+    function eliminarProducto(id) {
+      fetch(`${API_URL}/${id}`, {
+        method: "DELETE"
+      })
+      .then(() => cargarProductos());
+    }
+
+
+    function limpiarInputs() {
+      document.getElementById("nombre").value = "";
+      document.getElementById("precio").value = "";
+      document.getElementById("talla").value = "";
+    }
   </script>
 
 </body>
