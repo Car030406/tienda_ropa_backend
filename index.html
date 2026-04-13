@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tienda de Ropa</title>
+</head>
+<body>
+
+  <h1>Tienda de Ropa</h1>
+
+  <h2>Agregar producto</h2>
+  <input id="nombre" placeholder="Nombre">
+  <input id="precio" placeholder="Precio">
+  <input id="talla" placeholder="Talla">
+  <button onclick="agregarProducto()">Agregar</button>
+
+  <h2>Productos</h2>
+  <div id="lista"></div>
+
+  <script>
+    const API_URL = "http://localhost:3000/api/productos";
+
+    function cargarProductos() {
+      fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+          const lista = document.getElementById("lista");
+          lista.innerHTML = "";
+
+          data.forEach(p => {
+            lista.innerHTML += `
+              <div style="border:1px solid black; margin:10px; padding:10px;">
+                <h3>${p.nombre}</h3>
+                <p>Precio: $${p.precio}</p>
+                <p>Talla: ${p.talla}</p>
+              </div>
+            `;
+          });
+        });
+    }
+
+    function agregarProducto() {
+  const nombre = document.getElementById("nombre").value;
+  const precio = document.getElementById("precio").value;
+  const talla = document.getElementById("talla").value;
+
+  fetch("http://localhost:3000/api/productos", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      nombre: nombre,
+      precio: precio,
+      talla: talla
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log("RESPUESTA:", data);
+    cargarProductos(); // recargar lista
+  })
+  .catch(error => {
+    console.error("ERROR:", error);
+  });
+}
+  </script>
+
+</body>
+</html>
