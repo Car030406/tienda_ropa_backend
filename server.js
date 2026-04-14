@@ -41,7 +41,7 @@ app.get('/api/productos/:id', async (req, res) => {
     }
 });
 
-// POST crear producto (AHORA CON IMAGEN)
+// POST crear producto 
 app.post('/api/productos', async (req, res) => {
     console.log("BODY:", req.body);
 
@@ -49,16 +49,16 @@ app.post('/api/productos', async (req, res) => {
 
     try {
         const query = `
-  INSERT INTO productos (nombre, precio, talla, imagen)
-  VALUES (?, ?, ?, ?)
-`;
+            INSERT INTO productos (nombre, precio, talla, imagen)
+            VALUES (?, ?, ?, ?)
+        `;
 
-await db.query(query, [
-  nombre,
-  precio,
-  talla,
-  imagen || ""
-]);
+        const [result] = await db.query(query, [
+            nombre,
+            precio,
+            talla,
+            imagen || ""
+        ]);
 
         res.status(201).json({
             id: result.insertId,
@@ -70,39 +70,6 @@ await db.query(query, [
 
     } catch (error) {
         console.error("ERROR:", error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// PUT actualizar producto (AHORA CON IMAGEN)
-app.put('/api/productos/:id', async (req, res) => {
-    const { id } = req.params;
-    const { nombre, precio, talla, imagen = "" } = req.body;
-
-    try {
-        const query = `
-            UPDATE productos
-            SET nombre = ?, precio = ?, talla = ?, imagen = ?
-            WHERE id = ?
-        `;
-
-        await db.query(query, [
-            nombre,
-            precio,
-            talla,
-            imagen,
-            id
-        ]);
-
-        res.json({
-            id,
-            nombre,
-            precio,
-            talla,
-            imagen
-        });
-
-    } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
