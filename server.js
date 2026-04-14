@@ -49,16 +49,16 @@ app.post('/api/productos', async (req, res) => {
 
     try {
         const query = `
-            INSERT INTO productos (nombre, precio, talla, imagen)
-            VALUES (?, ?, ?, ?)
-        `;
+  INSERT INTO productos (nombre, precio, talla, imagen)
+  VALUES (?, ?, ?, ?)
+`;
 
-        const [result] = await db.query(query, [
-            nombre,
-            precio,
-            talla,
-            imagen
-        ]);
+await db.query(query, [
+  nombre,
+  precio,
+  talla,
+  imagen || ""
+]);
 
         res.status(201).json({
             id: result.insertId,
@@ -77,7 +77,7 @@ app.post('/api/productos', async (req, res) => {
 // PUT actualizar producto (AHORA CON IMAGEN)
 app.put('/api/productos/:id', async (req, res) => {
     const { id } = req.params;
-    const { nombre, precio, talla, imagen } = req.body;
+    const { nombre, precio, talla, imagen = "" } = req.body;
 
     try {
         const query = `

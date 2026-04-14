@@ -25,6 +25,7 @@
       margin: 5px;
       border-radius: 8px;
       border: 1px solid #ccc;
+      width: 90%;
     }
 
     button {
@@ -40,9 +41,8 @@
       background: rgb(189, 26, 134);
     }
 
-    /* CONTENEDOR FORM */
     .form-container {
-      background: rgb(0, 0, 0);
+      background: black;
       padding: 15px;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgb(189, 26, 134);
@@ -52,7 +52,6 @@
       color:#ccc;
     }
 
-    /* GRID DE PRODUCTOS */
     #lista {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -60,12 +59,11 @@
       margin-top: 20px;
     }
 
-    /* TARJETAS */
     .card {
-      background: rgb(0, 0, 0);
+      background: black;
       border-radius: 12px;
       padding: 15px;
-      box-shadow: 0 4px 10px rgba(189,23,134);
+      box-shadow: 0 4px 10px rgb(189, 26, 134);
       transition: transform 0.2s;
       color:#ccc;
     }
@@ -74,17 +72,14 @@
       transform: scale(1.05);
     }
 
-    .card h3 {
-      margin: 0;
-    }
-
-    .card p {
-      margin: 5px 0;
+    .card img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 10px;
     }
 
     .card button {
-      background: rgb(230, 96, 141);
-      margin-top: 10px;
+      margin-top: 5px;
       width: 100%;
     }
   </style>
@@ -92,16 +87,17 @@
 
 <body>
 
-  <h1> CARO'S STORE</h1>
+  <h1>CARO'S STORE</h1>
 
   <div class="form-container">
-    <h2>Agregar producto</h2>
+    <h2>Agregar / Editar producto</h2>
 
     <input id="nombre" placeholder="Nombre"><br>
     <input id="precio" placeholder="Precio" type="number"><br>
     <input id="talla" placeholder="Talla"><br>
+    <input id="imagen" placeholder="https://via.placeholder.com/300"><br>
 
-    <button onclick="agregarProducto()">Agregar</button>
+    <button onclick="agregarProducto()">Guardar</button>
   </div>
 
   <h2>Productos</h2>
@@ -109,12 +105,17 @@
 
   <script>
     const API_URL = "https://tienda-ropa-backend-1.onrender.com/api/productos";
-    
+
+    let editandoId = null;
+
     window.onload = cargarProductos;
 
     function cargarProductos() {
       fetch(API_URL)
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) throw new Error("Error al cargar productos");
+          return res.json();
+        })
         .then(data => {
           const lista = document.getElementById("lista");
           lista.innerHTML = "";
@@ -122,63 +123,110 @@
           data.forEach(p => {
             lista.innerHTML += `
               <div class="card">
+                <img src="${p.imagen || 'https://via.placeholder.com/300'}">
                 <h3>${p.nombre}</h3>
                 <p><strong>$${p.precio}</strong></p>
                 <p>Talla: ${p.talla}</p>
-                <button onclick="editarProducto(${p.id}, '${p.nombre}', ${p.precio}, '${p.talla}')">Editar</button>
+
+                <button onclick="editarProducto(${p.id}, '${p.nombre}', ${p.precio}, '${p.talla}', '${p.imagen}')">Editar</button>
                 <button onclick="eliminarProducto(${p.id})">Eliminar</button>
-                
               </div>
             `;
           });
+        })
+        .catch(error => {
+          console.error("ERROR:", error);
+          alert("No se pudieron cargar los productos");
         });
     }
-    function editarProducto(id, nombre, precio, talla) {
-    document.getElementById("nombre").value = nombre;
-    document.getElementById("precio").value = precio;
-    document.getElementById("talla").value = talla;
 
-    editandoId = id;
-  }
+    function editarProducto(id, nombre, precio, talla, imagen) {
+      document.getElementById("nombre").value = nombre;
+      document.getElementById("precio").value = precio;
+      document.getElementById("talla").value = talla;
+      document.getElementById("imagen").value = imagen || "";
+
+      editandoId = id;
+    }
 
     function agregarProducto() {
       const nombre = document.getElementById("nombre").value;
       const precio = document.getElementById("precio").value;
       const talla = document.getElementById("talla").value;
-      
+      const imagen = document.getElementById("imagen").value;
+
+      console.log({ nombre, precio, talla, imagen });
 
       if (!nombre || !precio || !talla) {
         alert("Completa todos los campos");
         return;
       }
 
-      fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ nombre, precio, talla })
-      })
-      .then(res => res.json())
-      .then(() => {
-        limpiarInputs();
-        cargarProductos();
-      })
-      .catch(error => console.error("ERROR:", error));
+      if (editandoId) {
+        fetch(`${API_URL}/${editandoId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ nombre, precio, talla, imagen })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error("Error al editar producto");
+          return res.json();
+        })
+        .then(() => {
+          editandoId = null;
+          limpiarInputs();
+          cargarProductos();
+        })
+        .catch(error => {
+          console.error("ERROR:", error);
+          alert("No se pudo editar el producto");
+        });
+
+      } else {
+        fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ nombre, precio, talla, imagen })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error("Error al agregar producto");
+          return res.json();
+        })
+        .then(() => {
+          limpiarInputs();
+          cargarProductos();
+        })
+        .catch(error => {
+          console.error("ERROR:", error);
+          alert("No se pudo agregar el producto");
+        });
+      }
     }
 
     function eliminarProducto(id) {
       fetch(`${API_URL}/${id}`, {
         method: "DELETE"
       })
-      .then(() => cargarProductos());
+      .then(res => {
+        if (!res.ok) throw new Error("Error al eliminar");
+        return res.json();
+      })
+      .then(() => cargarProductos())
+      .catch(error => {
+        console.error("ERROR:", error);
+        alert("No se pudo eliminar");
+      });
     }
-
 
     function limpiarInputs() {
       document.getElementById("nombre").value = "";
       document.getElementById("precio").value = "";
       document.getElementById("talla").value = "";
+      document.getElementById("imagen").value = "";
     }
   </script>
 
