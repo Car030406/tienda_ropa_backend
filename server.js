@@ -1,17 +1,20 @@
 const express = require('express');
 const db = require('./db');
 const cors = require('cors');
+const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
-const path = require('path');
 
 // Middlewares
 app.use(cors());
-app.use(express.static(__dirname));
 app.use(express.json());
+app.use(express.static(__dirname));
+
+// Ruta principal (sirve tu index.html)
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
+
 // ----- RUTAS PRODUCTOS -----
 
 // GET todos los productos
@@ -23,35 +26,46 @@ app.get('/api/productos', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
 // GET un producto por ID
 app.get('/api/productos/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        const [productos] = await db.query('SELECT * FROM productos WHERE id = ?', [id]);
+        const [productos] = await db.query(
+            'SELECT * FROM productos WHERE id = ?', 
+            [id]
+        );
         res.json(productos[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
-// POST crear producto
-app.post('/api/productos', async (req, res) => {
-    console.log("BODY:", req.body); 
 
-    const { nombre, precio, talla } = req.body;
+// POST crear producto (AHORA CON IMAGEN)
+app.post('/api/productos', async (req, res) => {
+    console.log("BODY:", req.body);
+
+    const { nombre, precio, talla, imagen } = req.body;
 
     try {
         const query = `
-            INSERT INTO productos (nombre, precio, talla)
-            VALUES (?, ?, ?)
+            INSERT INTO productos (nombre, precio, talla, imagen)
+            VALUES (?, ?, ?, ?)
         `;
 
-        const [result] = await db.query(query, [nombre, precio, talla]);
+        const [result] = await db.query(query, [
+            nombre,
+            precio,
+            talla,
+            imagen
+        ]);
 
         res.status(201).json({
             id: result.insertId,
             nombre,
             precio,
-            talla
+            talla,
+            imagen
         });
 
     } catch (error) {
@@ -59,36 +73,56 @@ app.post('/api/productos', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-// PUT actualizar producto
+
+// PUT actualizar producto (AHORA CON IMAGEN)
 app.put('/api/productos/:id', async (req, res) => {
     const { id } = req.params;
-    const { nombre, precio, talla } = req.body;
+    const { nombre, precio, talla, imagen } = req.body;
 
     try {
         const query = `
             UPDATE productos
-            SET nombre = ?, precio = ?, talla = ?
+            SET nombre = ?, precio = ?, talla = ?, imagen = ?
             WHERE id = ?
         `;
 
-        await db.query(query, [nombre, precio, talla, id]);
+        await db.query(query, [
+            nombre,
+            precio,
+            talla,
+            imagen,
+            id
+        ]);
 
-        res.json({ id, nombre, precio, talla });
+        res.json({
+            id,
+            nombre,
+            precio,
+            talla,
+            imagen
+        });
+
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
+
 // DELETE producto
 app.delete('/api/productos/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        await db.query("DELETE FROM productos WHERE id = ?", [id]);
+        await db.query(
+            "DELETE FROM productos WHERE id = ?", 
+            [id]
+        );
         res.json({ message: `Producto con id ${id} eliminado` });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
+
+// Servidor
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
