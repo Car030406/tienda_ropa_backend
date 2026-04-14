@@ -6,35 +6,80 @@
 
   <style>
     body {
-      font-family: Arial;
+      font-family: Georgia, 'Times New Roman', Times, serif, sans-serif;
       background: #ffc2d9;
+      margin: 0;
       padding: 20px;
     }
 
-    h1 { text-align: center; }
+    h1 {
+      text-align: center;
+    }
+
+    h2 {
+      margin-top: 30px;
+    }
 
     input {
-      padding: 8px;
+      padding: 10px;
       margin: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
       width: 90%;
     }
 
     button {
-      padding: 10px;
-      background: #e6608d;
-      color: white;
+      padding: 10px 15px;
       border: none;
+      background: rgb(230, 96, 141);
+      color: white;
+      border-radius: 8px;
       cursor: pointer;
+    }
+
+    button:hover {
+      background: rgb(189, 26, 134);
+    }
+
+    .form-container {
+      background: black;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgb(189, 26, 134);
+      max-width: 400px;
+      margin: auto;
+      text-align: center;
+      color:#ccc;
+    }
+
+    #lista {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
     }
 
     .card {
       background: black;
-      color: white;
-      padding: 10px;
-      margin: 10px;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 4px 10px rgb(189, 26, 134);
+      transition: transform 0.2s;
+      color:#ccc;
     }
 
-    img {
+    .card:hover {
+      transform: scale(1.05);
+    }
+
+    .card img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .card button {
+      margin-top: 5px;
       width: 100%;
     }
   </style>
@@ -42,101 +87,119 @@
 
 <body>
 
-<h1>CARO'S STORE</h1>
+  <h1>CARO'S STORE</h1>
 
-<input id="nombre" placeholder="Nombre"><br>
-<input id="precio" placeholder="Precio"><br>
-<input id="talla" placeholder="Talla"><br>
-<input id="imagen" placeholder="URL Imagen"><br>
+  <div class="form-container">
+    <h2>Agregar / Editar producto</h2>
 
-<button onclick="guardar()">Guardar</button>
+    <input id="nombre" placeholder="Nombre"><br>
+    <input id="precio" placeholder="Precio" type="number"><br>
+    <input id="talla" placeholder="Talla"><br>
+    <input id="imagen" placeholder="https://via.placeholder.com/300"><br>
 
-<h2>Productos</h2>
-<div id="lista"></div>
+    <button onclick="agregarProducto()">Guardar</button>
+  </div>
 
-<script>
+  <h2>Productos</h2>
+  <div id="lista"></div>
 
-const API = "https://tienda-ropa-backend-1.onrender.com/api/productos";
-let editId = null;
+  <script>
+    const API_URL = "https://tienda-ropa-backend-1.onrender.com/api/productos";
 
-function cargar() {
-  fetch(API)
-    .then(r => r.json())
-    .then(data => {
-      let html = "";
+    let editandoId = null;
 
-      data.forEach(p => {
-        html += `
-        <div class="card">
-          <img src="${p.imagen || 'https://via.placeholder.com/300'}">
-          <h3>${p.nombre}</h3>
-          <p>$${p.precio}</p>
-          <p>${p.talla}</p>
+    window.onload = cargarProductos;
 
-          <button onclick="editar(${p.id}, '${p.nombre}', '${p.precio}', '${p.talla}', '${p.imagen || ""}')">Editar</button>
-          <button onclick="eliminar(${p.id})">Eliminar</button>
-        </div>
-        `;
+    function cargarProductos() {
+      fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+          const lista = document.getElementById("lista");
+          lista.innerHTML = "";
+
+          data.forEach(p => {
+            lista.innerHTML += `
+              <div class="card">
+                <img src="${p.imagen || 'https://via.placeholder.com/300'}">
+                <h3>${p.nombre}</h3>
+                <p><strong>$${p.precio}</strong></p>
+                <p>Talla: ${p.talla}</p>
+
+                <button onclick="editarProducto(${p.id}, \`${p.nombre}\`, ${p.precio}, \`${p.talla}\`, \`${p.imagen || ""}\`)">Editar</button>
+                <button onclick="eliminarProducto(${p.id})">Eliminar</button>
+              </div>
+            `;
+          });
+        })
+        .catch(error => {
+          console.error("ERROR:", error);
+          alert("No se pudieron cargar los productos");
+        });
+    }
+
+    function editarProducto(id, nombre, precio, talla, imagen) {
+      document.getElementById("nombre").value = nombre;
+      document.getElementById("precio").value = precio;
+      document.getElementById("talla").value = talla;
+      document.getElementById("imagen").value = imagen || "";
+
+      editandoId = id;
+    }
+
+    function agregarProducto() {
+      const nombre = document.getElementById("nombre").value;
+      const precio = document.getElementById("precio").value;
+      const talla = document.getElementById("talla").value;
+      const imagen = document.getElementById("imagen").value;
+
+      if (!nombre || !precio || !talla) {
+        alert("Completa todos los campos");
+        return;
+      }
+
+      const metodo = editandoId ? "PUT" : "POST";
+      const url = editandoId ? `${API_URL}/${editandoId}` : API_URL;
+
+      fetch(url, {
+        method: metodo,
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ nombre, precio, talla, imagen })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Error");
+        return res.json();
+      })
+      .then(() => {
+        editandoId = null;
+        limpiarInputs();
+        cargarProductos();
+      })
+      .catch(error => {
+        console.error("ERROR:", error);
+        alert("No se pudo guardar el producto");
       });
+    }
 
-      document.getElementById("lista").innerHTML = html;
-    });
-}
+    function eliminarProducto(id) {
+      fetch(`${API_URL}/${id}`, {
+        method: "DELETE"
+      })
+      .then(() => cargarProductos())
+      .catch(error => {
+        console.error("ERROR:", error);
+        alert("No se pudo eliminar");
+      });
+    }
 
-function guardar() {
-  const nombre = document.getElementById("nombre").value;
-  const precio = document.getElementById("precio").value;
-  const talla = document.getElementById("talla").value;
-  const imagen = document.getElementById("imagen").value;
-
-  const data = { nombre, precio, talla, imagen };
-
-  if (editId) {
-    fetch(API + "/" + editId, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    }).then(() => {
-      editId = null;
-      limpiar();
-      cargar();
-    });
-  } else {
-    fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    }).then(() => {
-      limpiar();
-      cargar();
-    });
-  }
-}
-
-function editar(id, nombre, precio, talla, imagen) {
-  document.getElementById("nombre").value = nombre;
-  document.getElementById("precio").value = precio;
-  document.getElementById("talla").value = talla;
-  document.getElementById("imagen").value = imagen;
-
-  editId = id;
-}
-
-function eliminar(id) {
-  fetch(API + "/" + id, { method: "DELETE" })
-    .then(() => cargar());
-}
-
-function limpiar() {
-  document.getElementById("nombre").value = "";
-  document.getElementById("precio").value = "";
-  document.getElementById("talla").value = "";
-  document.getElementById("imagen").value = "";
-}
-
-window.onload = cargar;
-
-</script>
+    function limpiarInputs() {
+      document.getElementById("nombre").value = "";
+      document.getElementById("precio").value = "";
+      document.getElementById("talla").value = "";
+      document.getElementById("imagen").value = "";
+    }
+  </script>
 
 </body>
 </html>
