@@ -8,9 +8,8 @@ const PORT = process.env.PORT || 3000;
 // Middlewares
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
 
-// Ruta principal (sirve tu index.html)
+// Ruta principal 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
@@ -70,6 +69,38 @@ app.post('/api/productos', async (req, res) => {
 
     } catch (error) {
         console.error("ERROR:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+app.put('/api/productos/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nombre, precio, talla, imagen } = req.body;
+
+    try {
+        const query = `
+            UPDATE productos
+            SET nombre = ?, precio = ?, talla = ?, imagen = ?
+            WHERE id = ?
+        `;
+
+        const [result] = await db.query(query, [
+            nombre,
+            precio,
+            talla,
+            imagen || "", // 🔥 esto evita errores
+            id
+        ]);
+
+        res.json({
+            id,
+            nombre,
+            precio,
+            talla,
+            imagen: imagen || ""
+        });
+
+    } catch (error) {
+        console.error("ERROR PUT:", error); // 👈 IMPORTANTE
         res.status(500).json({ error: error.message });
     }
 });
